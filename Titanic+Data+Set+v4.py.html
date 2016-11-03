@@ -1,0 +1,268 @@
+
+# coding: utf-8
+
+# #### Exploring the Titanic Data Set
+# 
+# The goal of this Udacity project is to explore the Titanic data set and understand what factors made people more likely to survive.
+# 
+# I stared out my investigation by importing the python libraries and the Titanic data set.
+# 
+# I ran .info, .describe and .head functions to get a look at the data.
+#  
+
+# In[24]:
+
+get_ipython().magic(u'matplotlib inline')
+import unicodecsv
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import pylab as P
+        
+filename = '/Users/douglasjoseph-iMac/Documents/UdacityNDIP/Titanic Data Set/titanic_data.csv'
+titanic_df = pd.read_csv(filename)
+print titanic_df.info()
+
+
+# When I ran describe function, I noticed that the Age was not populated on all rows.  The Age attribute was in 714 out of 891 passenger rows.
+
+# In[25]:
+
+print titanic_df.describe()
+
+
+# In[26]:
+
+titanic_df.head(5)
+
+
+# In[28]:
+
+titanic_df.drop(['PassengerId','Ticket','Fare'], axis=1, inplace=True)
+
+
+# In[29]:
+
+titanic_df.head(5)
+
+
+# Let’s take a look a histogram of the passengers by Age.
+# The describe function shows the passenger's mean Age is 29.7.
+# Below is a histogram of the passenger's ages.
+
+# In[30]:
+
+titanic_df.Age.hist(bins=80,figsize = (7,7))
+plt.xlabel("Age")
+plt.ylabel("Number of Person")
+plt.title("Histogram of Passenger Age");
+
+
+# ## Kaggle web site also provided a tutorial of how to review and clean up the data with Python.
+# ## So, I will also take advantage of its tutorial and follow some of its steps.
+# ## Link to the [kaggle](https://www.kaggle.com/c/titanic/details/getting-started-with-python-ii) tutorial.
+# 
+# The Kaggle website suggested to fill in the rows with missing age values.
+# Other websites suggested to remove rows with missing age values.
+# For the purpose of learning to code, I wanted to filling in the missing values using the 
+# approach on the Kaggle website (but for full disclosure, I have not taken enough statistics or data wrangling classes to know when its best to drop the rows with missing data, or when to 'make up' new values).
+#  
+# Anyhow, for rows with Age containing 'NaN' (not a number), Kaggle code calculates the median age value for each class by sex of passenger.  Kaggle also adds a new column called AgeFill will contain the new calculated age.##
+
+# I wanted to know if passengers traveling parents or siblings on board, increased the chances for survival.
+# Again, using kaggle as a guide, created a new column called Family
+# and first populating it with a 4 and then filling in the column with a 1 if there was a passenger with either a sibling or a parent, or 0 if the passenger was traveling alone.
+
+# In[31]:
+
+titanic_df['Family'] = 4
+titanic_df['Family'] =  titanic_df["Parch"] + titanic_df["SibSp"]
+titanic_df['Family'].loc[titanic_df['Family'] > 0] = 1
+titanic_df['Family'].loc[titanic_df['Family'] == 0] = 0
+
+
+# Here is where I started to look at the data by different attributes.
+# 
+# The crosstab below shows the absolute values of males and females who survived (1) and those who did not (0).
+
+# In[32]:
+
+pd.crosstab(titanic_df["Sex"],titanic_df["Survived"],margins=True)
+
+
+# The crosstab below shows the percentage values of males and females who survived (1) and those who did not (0).
+# 
+# I found the code to present data in percentages from [www.analyticsvidhya.com](
+# https://www.analyticsvidhya.com/blog/2016/01/12-pandas-techniques-python-data-manipulation/)
+# 
+
+# In[65]:
+
+def percConvert(ser):
+  return ser/float(ser[-1])
+  
+pd.crosstab(titanic_df["Sex"],titanic_df["Survived"],margins=True).apply(percConvert, axis=1)
+
+
+# For the stacked barchart, I took the crosstab code and added a plot.bar function at the end of it.
+
+# In[66]:
+
+pd.crosstab(titanic_df["Sex"],titanic_df["Survived"],margins=False).plot.bar(stacked=True)
+
+
+# In[67]:
+
+pd.crosstab(titanic_df["Family"],titanic_df["Survived"],margins=True)
+
+
+# In[68]:
+
+def percConvert(ser):
+  return ser/float(ser[-1])
+  
+pd.crosstab(titanic_df["Family"],titanic_df["Survived"],margins=True).apply(percConvert, axis=1)
+
+
+# In[69]:
+
+pd.crosstab(titanic_df["Family"],titanic_df["Survived"],margins=False).plot.bar(stacked=True)
+
+
+# In[70]:
+
+pd.crosstab(titanic_df["Pclass"],titanic_df["Survived"],margins=True)
+
+
+# In[71]:
+
+def percConvert(ser):
+  return ser/float(ser[-1])
+  
+pd.crosstab(titanic_df["Pclass"],titanic_df["Survived"],margins=True).apply(percConvert, axis=1)
+
+
+# In[72]:
+
+pd.crosstab(titanic_df["Pclass"],titanic_df["Survived"],margins=False).plot.bar(stacked=True)
+
+
+# In[73]:
+
+def percConvert(ser):
+  return ser/float(ser[-1])
+  
+pd.crosstab(titanic_df["Pclass"],titanic_df["Survived"],margins=True).apply(percConvert, axis=1)
+
+
+# I wanted to also learn how Seaborn plotted worked, so I created plots with Seaborn.
+
+# In[34]:
+
+titanic_df.head(5)
+
+
+# In[46]:
+
+g = sns.FacetGrid(titanic_df, col="Pclass", sharex=False,
+                  gridspec_kws={"width_ratios": [5, 3, 3]})
+g.map(sns.boxplot, "Sex", "Age");
+
+
+# In[93]:
+
+sns.set(style="whitegrid")
+
+# Draw a nested violinplot and split the violins for easier comparison
+sns.violinplot(x="Pclass", y="Age", hue="Sex", data=titanic_df, split=True,
+               scale="count", inner="quart", palette={"male": "b", "female": "y"})
+sns.despine(left=True)
+
+
+
+# In[82]:
+
+sns.set(style="whitegrid")
+survivednot_df = titanic_df[titanic_df.Survived == 0]
+
+# Draw a nested violinplot and split the violins for easier comparison
+sns.violinplot(x="Pclass", y="Age", hue="Sex", data=survivednot_df, split=True,
+               scale="count", inner="quart", palette={"male": "b", "female": "y"})
+sns.despine(left=True)
+
+#(df["C"] == 900)]
+
+
+# In[94]:
+
+#sns.set(style="whitegrid", palette="paired", color_codes=True)
+survived_df = titanic_df[titanic_df.Survived == 1]
+
+# Draw a nested violinplot and split the violins for easier comparison
+sns.violinplot(x="Pclass", y="Age", hue="Sex", data=survived_df, split=True,
+               scale="count", inner="quart", palette={"male": "b", "female": "y"})
+sns.despine(left=True)
+
+
+# In[74]:
+
+g = sns.factorplot(x="Survived", col="Sex", data = titanic_df, col_wrap=4,kind="count", size=4, aspect=.9,palette="Paired")
+g.set_ylabels("survival count")
+
+
+# In[75]:
+
+g = sns.factorplot(x="Survived", col="Family", data = titanic_df, col_wrap=4,kind="count", size=4, aspect=.9,palette="Paired")
+g.set_ylabels("survival count")
+
+
+# In[76]:
+
+g = sns.factorplot(x="Survived", col="Pclass", data = titanic_df, col_wrap=4,kind="count", size=4, aspect=.9,palette="Paired")
+g.set_ylabels("survival count")
+
+
+# The next two tables are my favorites.  I created a groupby table to learn how to code with it, however I like the ability to use multiple groupings to show the survival rates with different passenger attributes.  The table shows survival rates Sex, Passenger Class and if a passenger traveled with Family or not.  The survival rates _almost_ sort by themselves, from Females traveling in Frist class to Males traveling in Third class.
+# 
+# The two tables show who survived broken out by Sex, Passenger Class and if the person traveled with Family or not.  The first table shows absolute values.  The second table shows percentage values.
+# 
+
+# In[86]:
+
+class_sex_grouping = titanic_df[ ['Family','Sex','Pclass','Survived'] ].groupby(["Sex","Pclass","Family"]).count()
+class_sex_grouping
+
+
+# In[82]:
+
+class_sex_grouping = titanic_df[ ['Family','Sex','Pclass','Survived'] ].groupby(["Sex","Pclass","Family"]).mean()
+class_sex_grouping
+
+
+# In[84]:
+
+class_sex_grouping = titanic_df[ ['Family','Sex','Pclass','Survived'] ].groupby(["Sex","Pclass","Family"]).mean()
+class_sex_grouping.plot.bar(stacked=True, figsize = (7,7))
+
+
+# ###Conclusion
+# My review of the Titanic data set focused on the survival rates of three passenger attributes, Sex (male or female), passenger class (1 = first, 2 = second, 3 = third), and if the passenger had family (1) or not (0).
+# 
+# The Titanic carried 2,224 on its madden voyage.  The Titanic data set used in this project is a subset of the population.  The data set contains data on 891 passengers, 314 females and 577 males. Overall 38% passengers survived the sinking of the Titanic.  Broken out by Sex, 74% of female passengers survived, while 18% of male passengers survived.
+# 
+# 63% of first class passengers survived, 47% of second class passengers survived, while 24% of third class passengers survived.  Females traveling in first or second class had survival rates above 90%.  37% of males traveling in first class survived.
+# 
+# 38% of passengers who traveled on the Titanic traveled with family.  Of those that traveled with family, 51% survived.  Of those that did not travel with family, 30% survived.  Interestingly, males who traveled with family survived at a higher rate (and at a higher than the mean survival rate for males), than single males, across all passenger classes.  
+# 
+# Even though I created a new column called AgeFill to address missing Age data.  I 'played' around with the age data, but in the end, I did not use it in my tables or plots.
+# 
+# Further study would be needed to test how well some factors correlate with others.  For example, I noticed that the survival rates for males traveling with family were higher than single males, but was traveling with family statistically significant in terms of survival rates?  I would like to know more about statistics to figure that one out.
+# 
+# 
+# 
+
+# In[ ]:
+
+
+
